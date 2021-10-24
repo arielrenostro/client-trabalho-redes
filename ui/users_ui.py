@@ -25,7 +25,7 @@ class UsersUI(BaseUI):
     def __init__(self, screen):
         super(UsersUI, self).__init__(screen=screen)
         self._users = []
-        self._set_user(self._context.users)
+        self._users = self._context.users
         self._messages: List[UIMessage] = list(map(lambda x: UIMessage(True, x), self._context.messages))
 
         self._listener_id = self._context.add_listener(self._on_event)
@@ -190,13 +190,9 @@ class UsersUI(BaseUI):
 
     async def _on_event(self, event: LarcContextEvent) -> None:
         if event.type_ == LarcContextEventType.USERS:
-            self._set_user(self._context.users)
+            self._users = self._context.users
 
         elif event.type_ == LarcContextEventType.NEW_MESSAGE:
             self._append_message(UIMessage(True, event.data))
 
         self._construct()
-
-    def _set_user(self, users):
-        self._users = users
-        self._error_line = self._header_line + len(self._users) + 6
