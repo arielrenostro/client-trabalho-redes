@@ -63,10 +63,10 @@ class LarcContext:
     def error(self) -> Exception:
         return self._error
 
-    async def set_error(self, value):
-        self._error = value
-        if self._error:
-            await self._fire_listeners(LarcContextEvent(type_=LarcContextEventType.ERROR))
+    def get_user_by_id(self, user_id: int) -> LarcUser:
+        for user in self._users:
+            if user.id_ == user_id:
+                return user
 
     def add_listener(self, listener) -> str:
         id_ = str(uuid.uuid4())
@@ -76,10 +76,11 @@ class LarcContext:
     def remove_listener(self, listener_id: str) -> None:
         del self._listeners[listener_id]
 
-    def get_user_by_id(self, user_id: int) -> LarcUser:
-        for user in self._users:
-            if user.id_ == user_id:
-                return user
+    def append_message(self, message: LarcSentMessage):
+        self._messages.append(message)
+
+        event = LarcContextEvent(LarcContextEventType.NEW_MESSAGE, message)
+        asyncio.create_task(self._fire_listeners(event))
 
     def set_users(self, users: List[LarcUser]) -> None:
         self._users = users
@@ -87,11 +88,10 @@ class LarcContext:
         event = LarcContextEvent(LarcContextEventType.USERS)
         asyncio.create_task(self._fire_listeners(event))
 
-    def append_message(self, message: LarcSentMessage):
-        self._messages.append(message)
-
-        event = LarcContextEvent(LarcContextEventType.NEW_MESSAGE, message)
-        asyncio.create_task(self._fire_listeners(event))
+    async def set_error(self, value):
+        self._error = value
+        if self._error:
+            await self._fire_listeners(LarcContextEvent(type_=LarcContextEventType.ERROR))
 
     async def _fire_listeners(self, event: LarcContextEvent):
         values = [*self._listeners.values()]

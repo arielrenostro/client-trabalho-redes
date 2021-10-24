@@ -164,7 +164,7 @@ class LarcGetCard(LarcMessage):
                 value = parts[0]
                 suit = parts[1]
                 return LarcCard(value=value, suit=LarcCardSuit[suit])
-        return LarcSentMessage()
+        return LarcCard(value=None, suit=None)
 
 
 class LarcSendGame(LarcMessage):
