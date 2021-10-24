@@ -1,6 +1,7 @@
 import curses
 import sys
 
+from context.larc_context import LarcContextEvent, LarcContextEventType
 from ui.base_ui import BaseUI
 from ui.players_ui import PlayersUI
 from ui.users_ui import UsersUI
@@ -20,9 +21,11 @@ class MenuUI(BaseUI):
         curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
         super(MenuUI, self).__init__(screen=screen)
 
+        self._context.add_listener(self._on_event)
+
     async def show(self):
         while True:
-            self._construct()
+            await self._construct()
 
             key = await self._read_key()
             if key == 27:
@@ -38,13 +41,13 @@ class MenuUI(BaseUI):
                 await ui.show()
                 await ui.destroy()
 
-    def _construct(self):
+    async def _construct(self):
         self._window.clear()
         self._print_header()
         self._print_options()
         if self._context.error:
             self._print_error(self._context.error)
-            self._context.error = None
+            await self._context.set_error(None)
         self._window.refresh()
 
     def _print_options(self):
@@ -61,3 +64,7 @@ class MenuUI(BaseUI):
         self._window.move(self._header_line + 8, 0)
 
         self._error_line = self._header_line + 10
+
+    async def _on_event(self, event: LarcContextEvent):
+        if event.type_ == LarcContextEventType.ERROR:
+            await self._construct()

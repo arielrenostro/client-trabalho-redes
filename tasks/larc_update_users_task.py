@@ -1,4 +1,5 @@
 import asyncio
+from threading import Thread
 from typing import List
 
 from connection.larc_messages import LarcGetUsers
@@ -8,26 +9,27 @@ from model.larc_models import LarcUser
 
 class LarcUpdateUsersTask:
 
-    def __init__(self, loop):
-        self._loop = loop
-        self._context = LarcContext()
-        self._task = None
+    def __init__(self, context):
+        self._context: LarcContext = context
+        self._stopped = False
 
     def start(self):
-        self._task = self._loop.create_task(self._run())
+        Thread(target=self._run).start()
 
     def stop(self):
-        if self._task:
-            self._task.cancel()
+        self._stopped = True
 
-    async def _run(self):
-        while True:
-            try:
-                get_users = LarcGetUsers(connection=self._context.connection, credentials=self._context.credentials)
-                users: List[LarcUser] = await get_users.execute()
-                if users:
-                    self._context.set_users(users)
-            except Exception as e:
-                self._context.error = e
-                print(f'Error during update task: {e}')
-            await asyncio.sleep(6)  # await 6 seconds to refresh users
+    def _run(self):
+        async def _inner():
+            while not self._stopped:
+                try:
+                    get_users = LarcGetUsers(connection=self._context.connection, credentials=self._context.credentials)
+                    users: List[LarcUser] = await get_users.execute()
+                    if users:
+                        self._context.set_users(users)
+                except Exception as e:
+                    await self._context.set_error(e)
+                await asyncio.sleep(6)  # await 6 seconds to refresh users
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(_inner())

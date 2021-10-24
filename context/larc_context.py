@@ -12,6 +12,7 @@ from model.larc_models import LarcUser, LarcSentMessage
 class LarcContextEventType(enum.Enum):
     NEW_MESSAGE = 0
     USERS = 1
+    ERROR = 2
 
 
 class LarcContextEvent:
@@ -61,9 +62,10 @@ class LarcContext:
     def error(self) -> Exception:
         return self._error
 
-    @error.setter
-    def error(self, value):
+    async def set_error(self, value):
         self._error = value
+        if self._error:
+            await self._fire_listeners(LarcContextEvent(type_=LarcContextEventType.ERROR))
 
     def add_listener(self, listener) -> str:
         id_ = str(uuid.uuid4())

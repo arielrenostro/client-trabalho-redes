@@ -1,9 +1,5 @@
 import abc
-import asyncio
 import curses
-import sys
-from asyncio import Future
-from threading import Thread
 
 from context.larc_context import LarcContext
 
@@ -38,7 +34,7 @@ class BaseUI(abc.ABC):
         self._window.attron(curses.A_BOLD)
         self._window.attron(curses.color_pair(2))
 
-        self._window.addstr(self._error_line, 2, param)
+        self._window.addstr(self._error_line, 2, f'{param}')
 
         self._window.attroff(curses.A_BOLD)
         self._window.attron(curses.color_pair(2))
@@ -47,15 +43,5 @@ class BaseUI(abc.ABC):
 
         curses.napms(1000)
 
-    async def _read_key(self) -> Future:
-        loop = asyncio.get_event_loop()
-        future = loop.create_future()
-
-        def _handler():
-            key = self._window.getch()
-            future.set_result(key)
-
-        thread = Thread(target=_handler)
-        thread.start()
-
-        return future
+    async def _read_key(self):
+        return self._window.getch()

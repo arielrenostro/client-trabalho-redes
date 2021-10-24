@@ -40,7 +40,7 @@ class UsersUI(BaseUI):
         while True:
             self._construct()
 
-            key = self._window.getch()
+            key = await self._read_key()
             if await self._process_key(key):
                 break
 
