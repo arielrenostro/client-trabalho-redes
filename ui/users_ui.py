@@ -188,7 +188,7 @@ class UsersUI(BaseUI):
             self._text_field = ''
             self._state = UIState.SEND_MESSAGE
 
-    def _on_event(self, event: LarcContextEvent) -> None:
+    async def _on_event(self, event: LarcContextEvent) -> None:
         if event.type_ == LarcContextEventType.USERS:
             self._set_user(self._context.users)
 

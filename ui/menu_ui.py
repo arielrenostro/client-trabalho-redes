@@ -23,8 +23,11 @@ class MenuUI(BaseUI):
 
         self._context.add_listener(self._on_event)
 
+        self._active = False
+
     async def show(self):
         while True:
+            self._active = True
             await self._construct()
 
             key = await self._read_key()
@@ -32,11 +35,13 @@ class MenuUI(BaseUI):
                 sys.exit(0)
 
             elif key == ord('1'):
+                self._active = False
                 ui = UsersUI(self._screen)
                 await ui.show()
                 await ui.destroy()
 
             elif key == ord('2'):
+                self._active = False
                 ui = PlayersUI(self._screen)
                 await ui.show()
                 await ui.destroy()
@@ -63,8 +68,12 @@ class MenuUI(BaseUI):
 
         self._window.move(self._header_line + 8, 0)
 
-        self._error_line = self._header_line + 10
+        self._error_line = self._header_line + 8
+        
+    def _print_error(self, param):
+        super(MenuUI, self)._print_error(f'ERRO: {param}')
 
     async def _on_event(self, event: LarcContextEvent):
         if event.type_ == LarcContextEventType.ERROR:
-            await self._construct()
+            if self._active:
+                await self._construct()

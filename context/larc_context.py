@@ -33,10 +33,11 @@ class LarcContext:
         self._credentials = LarcCredentials(user_id=LARC_USER_ID, user_password=LARC_USER_PASSWORD)
         self._connection = LarcConnection()
 
-    def __new__(cls, *args, **kwargs):
-        if not isinstance(cls._instance, cls):
-            cls._instance = super(LarcContext, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
+    @staticmethod
+    def instance():
+        if LarcContext._instance is None:
+            LarcContext._instance = LarcContext()
+        return LarcContext._instance
 
     @property
     def connection(self) -> LarcConnection:
@@ -93,8 +94,10 @@ class LarcContext:
         asyncio.create_task(self._fire_listeners(event))
 
     async def _fire_listeners(self, event: LarcContextEvent):
-        for listener in self._listeners.values():
+        values = [*self._listeners.values()]
+        for listener in values:
             try:
-                await listener(event)
+                if listener:
+                    await listener(event)
             except Exception as e:
                 print(e)

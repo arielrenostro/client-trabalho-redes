@@ -9,8 +9,8 @@ from model.larc_models import LarcUser
 
 class LarcUpdateUsersTask:
 
-    def __init__(self, context):
-        self._context: LarcContext = context
+    def __init__(self):
+        self._context: LarcContext = LarcContext.instance()
         self._stopped = False
 
     def start(self):

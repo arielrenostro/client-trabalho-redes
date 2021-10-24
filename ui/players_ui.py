@@ -166,5 +166,5 @@ class PlayersUI(BaseUI):
         get_players = LarcGetPlayers(connection=self._context.connection, credentials=self._context.credentials)
         self._players = await get_players.execute()
 
-    def _on_event(self, event: LarcContextEvent) -> None:
+    async def _on_event(self, event: LarcContextEvent) -> None:
         self._construct()  # TODO: Implements

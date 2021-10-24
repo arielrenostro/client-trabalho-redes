@@ -12,7 +12,7 @@ class BaseUI(abc.ABC):
         self._window = curses.newwin(self._num_rows, self._num_cols, 0, 0)
         self._num_cols -= 1
         self._num_rows -= 1
-        self._context = LarcContext()
+        self._context = LarcContext.instance()
         self._header_line = 3
         self._error_line = 4
 
