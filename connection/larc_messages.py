@@ -86,10 +86,11 @@ class LarcGetUsers(LarcMessage):
         users = []
         if response is not None and len(response) > 0:
             parts = response.decode(LARC_ENCODING).split(':')
-            for i in range(1, len(parts), 2):
-                id_ = int(parts[i - 1])
-                name = parts[i]
-                users.append(LarcUser(id_=id_, name=name))
+            for i in range(2, len(parts), 3):
+                id_ = int(parts[i - 2])
+                name = parts[i - 1]
+                victories = int(parts[i])
+                users.append(LarcUser(id_=id_, name=name, victories=victories))
         return users
 
 

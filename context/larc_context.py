@@ -13,7 +13,7 @@ class LarcContextEventType(enum.Enum):
     USERS = 1
     ERROR = 2
     PLAYERS = 3
-    NEW_CARD = 4
+    CARDS = 4
 
 
 class LarcContextEvent:
@@ -106,6 +106,7 @@ class LarcContext:
 
     async def set_players(self, players: List[LarcPlayer]) -> None:
         self._players = players
+        self._players.sort(key=lambda player: player.user_id)
 
         event = LarcContextEvent(LarcContextEventType.PLAYERS)
         await self._fire_listeners(event)
@@ -113,7 +114,13 @@ class LarcContext:
     async def append_card(self, card: LarcCard) -> None:
         self._cards.append(card)
 
-        event = LarcContextEvent(LarcContextEventType.NEW_CARD)
+        event = LarcContextEvent(LarcContextEventType.CARDS)
+        await self._fire_listeners(event)
+
+    async def clear_cards(self) -> None:
+        self._cards = []
+
+        event = LarcContextEvent(LarcContextEventType.CARDS)
         await self._fire_listeners(event)
 
     async def set_error(self, value):

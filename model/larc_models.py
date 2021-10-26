@@ -3,9 +3,10 @@ import enum
 
 class LarcUser:
 
-    def __init__(self, id_: int, name: str):
+    def __init__(self, id_: int, name: str, victories: int):
         self.id_: int = id_
         self.name: str = name
+        self.victories: int = victories
 
 
 class LarcMessage:

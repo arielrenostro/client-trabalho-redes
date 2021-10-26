@@ -3,7 +3,7 @@ import enum
 import sys
 
 from connection.larc_messages import LarcGetCard, LarcQuitGame, LarcEnterGame, LarcStopGame, LarcSendMessage
-from context.larc_context import LarcContextEvent
+from context.larc_context import LarcContextEvent, LarcContextEventType
 from model.larc_models import LarcPlayerStatus, LarcCardSuit, LarcReceivedMessage, LarcCard, LarcSentMessage
 from ui.base_ui import BaseUI
 
@@ -78,6 +78,9 @@ class MenuUI(BaseUI):
         elif key in (ord('e'), ord('E')):
             if self._game_state in (GameState.NOT_PLAYING, GameState.STOPPED):
                 await self._enter_game()
+
+        elif key in (ord('c'), ord('C')):
+            await self._clear_cards()
 
         elif key in (ord('m'), ord('M')):
             self._state = UIState.SELECT_USER
@@ -157,7 +160,7 @@ class MenuUI(BaseUI):
 
         self._window.attron(curses.color_pair(1))
         self._window.attron(curses.A_BOLD)
-        self._window.addstr(idx, 2, 'USUÁRIOS CONECTADOS:')
+        self._window.addstr(idx, 2, 'USUÁRIOS CONECTADOS:         (VITÓRIAS)')
         idx += 2
 
         self._window.attroff(curses.A_BOLD)
@@ -168,7 +171,11 @@ class MenuUI(BaseUI):
                 self._window.attron(curses.color_pair(4))
             else:
                 self._window.attron(curses.color_pair(3))
-            self._window.addstr(idx, 2, f'{user.id_} - {user.name}'[:40])
+
+            user_column = user.name
+            while len(user_column) < 35:
+                user_column = f'{user_column} '
+            self._window.addstr(idx, 2, f'{user.id_} - {user_column}'[:35] + f'  {user.victories}'[:5])
             idx += 1
 
     def _print_players(self):
@@ -250,7 +257,7 @@ class MenuUI(BaseUI):
                 self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | E - VOLTAR PARA O JOGO')
 
             elif self._game_state == GameState.PLAYING:
-                self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | R - REQUISITAR CARTA | P - PARAR')
+                self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | R - REQUISITAR CARTA | P - PARAR | C - LIMPAR CARTAS')
 
         elif self._state == UIState.SELECT_USER:
             self._window.addstr(idx, 2, f'ESC - VOLTAR | ENTER - SELECIONAR USUÁRIO')
@@ -323,5 +330,14 @@ class MenuUI(BaseUI):
         await stop_game.execute()
         self._game_state = GameState.STOPPED
 
+    async def _clear_cards(self):
+        await self._context.clear_cards()
+
     async def _on_event(self, event: LarcContextEvent):
+        if event.type_ == LarcContextEventType.NEW_MESSAGE:
+            message: LarcReceivedMessage = event.data
+            if not message.empty \
+                    and message.user_id == 0 \
+                    and 'o vencedor desta rodada foi' in message.data.lower():
+                await self._clear_cards()
         await self._construct()
