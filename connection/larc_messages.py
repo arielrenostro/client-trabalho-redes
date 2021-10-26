@@ -3,7 +3,8 @@ from abc import ABC
 from typing import List
 
 from config import LARC_ENCODING
-from model.larc_models import LarcUser, LarcSentMessage, LarcPlayer, LarcPlayerStatus, LarcCard, LarcCardSuit
+from model.larc_models import LarcUser, LarcSentMessage, LarcPlayer, LarcPlayerStatus, LarcCard, LarcCardSuit, \
+    LarcReceivedMessage
 
 
 class LarcCredentials:
@@ -85,9 +86,9 @@ class LarcGetUsers(LarcMessage):
         users = []
         if response is not None and len(response) > 0:
             parts = response.decode(LARC_ENCODING).split(':')
-            for i in range(0, len(parts), 2):
-                id_ = int(parts[i])
-                name = parts[i + 1]
+            for i in range(1, len(parts), 2):
+                id_ = int(parts[i - 1])
+                name = parts[i]
                 users.append(LarcUser(id_=id_, name=name))
         return users
 
@@ -97,14 +98,14 @@ class LarcGetMessage(LarcMessage):
     def __init__(self, connection, credentials: LarcCredentials):
         super(LarcGetMessage, self).__init__(code='GET MESSAGE', connection=connection, credentials=credentials)
 
-    def _parse_response(self, response: bytes) -> LarcSentMessage:
+    def _parse_response(self, response: bytes) -> LarcReceivedMessage:
         if response is not None and len(response) > 0:
             parts = response.decode(LARC_ENCODING).split(':')
             if len(parts) == 2 and len(parts[0]) > 0:
                 user_id = int(parts[0])
                 data = parts[1]
-                return LarcSentMessage(user_id=user_id, data=data)
-        return LarcSentMessage()
+                return LarcReceivedMessage(user_id=user_id, data=data)
+        return LarcReceivedMessage()
 
 
 class LarcSendMessage(LarcMessage):
@@ -145,9 +146,9 @@ class LarcGetPlayers(LarcMessage):
         players = []
         if response is not None and len(response) > 0:
             parts = response.decode(LARC_ENCODING).split(':')
-            for i in range(0, len(parts), 2):
-                user_id = int(parts[i])
-                status = parts[i + 1]
+            for i in range(1, len(parts), 2):
+                user_id = int(parts[i - 1])
+                status = parts[i]
                 players.append(LarcPlayer(user_id=user_id, status=LarcPlayerStatus[status]))
         return players
 
@@ -164,7 +165,7 @@ class LarcGetCard(LarcMessage):
                 value = parts[0]
                 suit = parts[1]
                 return LarcCard(value=value, suit=LarcCardSuit[suit])
-        return LarcCard(value=None, suit=None)
+        return False
 
 
 class LarcSendGame(LarcMessage):

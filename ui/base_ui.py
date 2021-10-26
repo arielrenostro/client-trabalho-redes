@@ -1,4 +1,5 @@
 import abc
+import asyncio
 import curses
 
 from context.larc_context import LarcContext
@@ -10,6 +11,7 @@ class BaseUI(abc.ABC):
         self._screen = screen
         self._num_rows, self._num_cols = screen.getmaxyx()
         self._window = curses.newwin(self._num_rows, self._num_cols, 0, 0)
+        self._window.nodelay(True)
         self._num_cols -= 1
         self._num_rows -= 1
         self._context = LarcContext.instance()
@@ -44,4 +46,8 @@ class BaseUI(abc.ABC):
         curses.napms(1000)
 
     async def _read_key(self):
-        return self._window.getch()
+        key = -1
+        while key == -1:
+            key = self._window.getch()
+            await asyncio.sleep(0.01)
+        return key

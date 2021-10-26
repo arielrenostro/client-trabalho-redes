@@ -8,7 +8,7 @@ class LarcUser:
         self.name: str = name
 
 
-class LarcSentMessage:
+class LarcMessage:
 
     def __init__(self, user_id: int = None, data: str = None):
         self.user_id = user_id
@@ -17,6 +17,18 @@ class LarcSentMessage:
     @property
     def empty(self) -> bool:
         return self.user_id is None and self.data is None
+
+
+class LarcSentMessage(LarcMessage):
+
+    def __init__(self, user_id: int = None, data: str = None):
+        super(LarcSentMessage, self).__init__(user_id, data)
+
+
+class LarcReceivedMessage(LarcMessage):
+
+    def __init__(self, user_id: int = None, data: str = None):
+        super(LarcReceivedMessage, self).__init__(user_id, data)
 
 
 class LarcPlayerStatus(enum.Enum):
