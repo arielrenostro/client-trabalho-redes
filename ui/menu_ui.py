@@ -12,7 +12,6 @@ class UIState(enum.Enum):
     NONE = 0
     SELECT_USER = 1
     MESSAGE = 2
-    PLAYING = 3
 
 
 class GameState(enum.Enum):
@@ -60,16 +59,24 @@ class MenuUI(BaseUI):
             elif self._state == UIState.MESSAGE:
                 await self._process_key_message(key)
 
-            elif self._state == UIState.PLAYING:
-                await self._process_key_playing(key)
-
     async def _process_key_none(self, key):
         if key == 27:
-            sys.exit(0)
+            if self._game_state == GameState.NOT_PLAYING:
+                sys.exit(0)
+            else:
+                self._state = UIState.NONE
+                await self._quit_game()
+
+        elif key in (ord('r'), ord('R')):
+            if self._game_state == GameState.PLAYING:
+                await self._request_card()
+
+        elif key in (ord('p'), ord('P')):
+            if self._game_state == GameState.PLAYING:
+                await self._stop_game()
 
         elif key in (ord('e'), ord('E')):
             if self._game_state in (GameState.NOT_PLAYING, GameState.STOPPED):
-                self._state = UIState.PLAYING
                 await self._enter_game()
 
         elif key in (ord('m'), ord('M')):
@@ -102,23 +109,6 @@ class MenuUI(BaseUI):
 
         elif key == 10:
             await self._send_message()
-
-    async def _process_key_playing(self, key):
-        if key == 27:
-            self._state = UIState.NONE
-            await self._quit_game()
-
-        elif key in (ord('r'), ord('R')):
-            if self._game_state == GameState.PLAYING:
-                await self._request_card()
-
-        elif key in (ord('p'), ord('P')):
-            if self._game_state == GameState.PLAYING:
-                await self._stop_game()
-
-        elif key in (ord('e'), ord('E')):
-            if self._game_state in (GameState.NOT_PLAYING, GameState.STOPPED):
-                await self._enter_game()
 
     async def _select_user(self):
         user_id = int(self._text_field)
@@ -227,10 +217,15 @@ class MenuUI(BaseUI):
         self._window.attroff(curses.A_BOLD)
         self._window.attron(curses.color_pair(3))
         for message in self._context.messages:
-            user = self._context.get_user_by_id(message.user_id)
-            name = user.name if user is not None else 'DESCONHECIDO'
+            name = 'DESCONHECIDO'
+            if message.user_id == 0:
+                name = 'SERVIDOR'
+            else:
+                user = self._context.get_user_by_id(message.user_id)
+                if user:
+                    name = user.name
             received = isinstance(message, LarcReceivedMessage)
-            text = f'{"<--" if received else "-->"} {message.user_id} - {name}: {message.data}'[:50]
+            text = f'{"<--" if received else "-->"} {message.user_id} - {name}: {message.data}'[:100]
             self._window.addstr(idx, 130, text)
             idx += 1
 
@@ -248,23 +243,20 @@ class MenuUI(BaseUI):
         idx = self._controls_line
 
         if self._state == UIState.NONE:
-            self._window.addstr(idx, 2, f'ESC - SAIR | E - ENTRAR | M - ENVIAR MENSAGEM')
+            if self._game_state == GameState.NOT_PLAYING:
+                self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | E - ENTRAR ')
+
+            elif self._game_state == GameState.STOPPED:
+                self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | E - VOLTAR PARA O JOGO')
+
+            elif self._game_state == GameState.PLAYING:
+                self._window.addstr(idx, 2, f'ESC - SAIR | M - ENVIAR MENSAGEM | R - REQUISITAR CARTA | P - PARAR')
 
         elif self._state == UIState.SELECT_USER:
             self._window.addstr(idx, 2, f'ESC - VOLTAR | ENTER - SELECIONAR USUÁRIO')
 
         elif self._state == UIState.MESSAGE:
             self._window.addstr(idx, 2, f'ESC - DESSELECIONAR | ENTER - ENVIAR MENSAGEM')
-
-        elif self._state == UIState.PLAYING:
-            if self._game_state == GameState.NOT_PLAYING:
-                self._window.addstr(idx, 2, f'ESC - SAIR | E - VOLTAR PARA O JOGO')
-
-            elif self._game_state == GameState.STOPPED:
-                self._window.addstr(idx, 2, f'ESC - SAIR | E - VOLTAR PARA O JOGO')
-
-            elif self._game_state == GameState.PLAYING:
-                self._window.addstr(idx, 2, f'ESC - SAIR | R - REQUISITAR CARTA | P - PARAR')
 
     def _print_text_field(self):
         text = ''
