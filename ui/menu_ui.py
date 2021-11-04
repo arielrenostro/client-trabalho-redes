@@ -31,7 +31,7 @@ class MenuUI(BaseUI):
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
-        curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(4, curses.COLOR_WHITE, curses.COLOR_BLACK)
         super(MenuUI, self).__init__(screen=screen)
 
         self._context.add_listener(self._on_event)
@@ -124,6 +124,10 @@ class MenuUI(BaseUI):
             self._state = UIState.MESSAGE
 
     async def _send_message(self):
+        if len(self._text_field) == 0:
+            self._print_error("DIGITE A MENSAGEM!")
+            return
+
         send_message = LarcSendMessage(
             connection=self._context.connection,
             credentials=self._context.credentials,

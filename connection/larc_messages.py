@@ -117,7 +117,7 @@ class LarcSendMessage(LarcMessage):
         if message_data is None or len(message_data) == 0:
             raise RuntimeError('The message data is required.')
         super(LarcSendMessage, self).__init__(
-            code='GET MESSAGE',
+            code='SEND MESSAGE',
             connection=connection,
             credentials=credentials,
             args=[user_dest_id, message_data],
